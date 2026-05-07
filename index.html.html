@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RouteOps — Plataforma de Apoio à Roteirização</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#1a2e44;
+  --brand-mid:#243d57;
+  --accent:#2563eb;
+  --accent2:#059669;
+  --warn:#d97706;
+  --danger:#dc2626;
+  --purple:#7c3aed;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --surface3:#f1f5f9;
+  --border:#e2e8f0;
+  --border2:#cbd5e1;
+  --text:#0f172a;
+  --text2:#475569;
+  --text3:#94a3b8;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.05);
+}
+
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--surface2);color:var(--text);font-size:14px;line-height:1.5}
+
+/* TOPBAR */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:var(--brand);height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.topbar-brand{display:flex;align-items:center;gap:12px}
+.topbar-logo{
+  width:30px;height:30px;background:var(--accent);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.1);
+}
+.topbar-logo svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.topbar-name{color:#fff;font-size:15px;font-weight:600;letter-spacing:-.3px}
+.topbar-sub{color:#64748b;font-size:11px;font-family:'DM Mono',monospace;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-badge{
+  background:rgba(37,99,235,0.25);color:#93c5fd;
+  font-size:11px;font-family:'DM Mono',monospace;
+  padding:3px 9px;border-radius:5px;
+  border:1px solid rgba(147,197,253,0.2);
+}
+.topbar-version{color:#475569;font-size:11px;font-family:'DM Mono',monospace}
+
+/* LAYOUT */
+.layout{display:flex;padding-top:56px;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--brand);
+  border-right:1px solid rgba(255,255,255,0.06);
+  padding:20px 0;
+  position:fixed;top:56px;left:0;bottom:0;
+  overflow-y:auto;
+}
+.sidebar-section{margin-bottom:24px}
+.sidebar-label{
+  font-size:10px;font-weight:600;color:#475569;
+  text-transform:uppercase;letter-spacing:.8px;
+  padding:0 18px;margin-bottom:6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;cursor:pointer;
+  font-size:13px;font-weight:500;color:#94a3b8;
+  transition:all .15s;border-left:2px solid transparent;
+}
+.nav-item:hover{color:#e2e8f0;background:rgba(255,255,255,0.04)}
+.nav-item.active{color:#fff;background:rgba(37,99,235,0.2);border-left-color:var(--accent)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.06);margin:8px 16px}
+
+/* MAIN */
+.main{margin-left:220px;flex:1;padding:28px;min-height:calc(100vh - 56px)}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* CARDS */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px;
+  box-shadow:var(--shadow);margin-bottom:16px;
+}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
+.card-sub{font-size:12px;color:var(--text3);margin-top:3px;line-height:1.5}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:24px}
+.page-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.4px}
+.page-desc{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* STEP FLOW */
+.step-flow{display:flex;align-items:center;margin-bottom:24px}
+.step-node{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
+.step-circle{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;font-family:'DM Mono',monospace;
+  border:2px solid var(--border);background:var(--surface);color:var(--text3);
+  transition:all .3s;
+}
+.step-circle.active{border-color:var(--accent);background:#eff6ff;color:var(--accent)}
+.step-circle.done{border-color:var(--accent2);background:#dcfce7;color:var(--accent2)}
+.step-label{font-size:11px;color:var(--text3);text-align:center;max-width:80px;line-height:1.3}
+.step-label.active{color:var(--accent);font-weight:500}
+.step-label.done{color:var(--accent2)}
+.step-connector{height:2px;flex:0.5;background:var(--border);margin-bottom:20px;transition:all .3s}
+.step-connector.done{background:var(--accent2)}
+
+/* GRID */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.row5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+
+/* FORM */
+.field-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block}
+select,input[type=date],input[type=text]{
+  width:100%;height:36px;padding:0 10px;
+  border:1px solid var(--border);border-radius:6px;
+  font-size:13px;font-family:'DM Sans',sans-serif;
+  color:var(--text);background:var(--surface);
+  transition:border-color .15s;
+}
+select{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+
+/* UPLOAD ZONE */
+.upload-zone{
+  border:1.5px dashed var(--border2);border-radius:9px;
+  padding:18px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all .2s;background:var(--surface2);
+}
+.upload-zone:hover{border-color:var(--accent);background:#eff6ff}
+.upload-zone.has-file{border-style:solid;border-color:var(--accent2);background:#f0fdf4}
+.upload-zone input[type=file]{display:none}
+.upload-icon{
+  width:40px;height:40px;border-radius:9px;
+  background:var(--surface3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .2s;
+}
+.upload-zone.has-file .upload-icon{background:#dcfce7;border-color:#bbf7d0}
+.upload-zone:hover .upload-icon{background:#dbeafe;border-color:#bfdbfe}
+.upload-icon svg{width:18px;height:18px;stroke:#94a3b8;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.upload-zone.has-file .upload-icon svg{stroke:#16a34a}
+.upload-zone:hover .upload-icon svg{stroke:var(--accent)}
+.upload-text{font-size:13px;font-weight:500;color:var(--text);transition:color .2s}
+.upload-hint{font-size:11px;color:var(--text3);margin-top:2px}
+.upload-zone.has-file .upload-text{color:var(--accent2)}
+
+/* BUTTONS */
+.btn{
+  height:38px;padding:0 18px;border-radius:7px;
+  font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  transition:all .15s;border:none;white-space:nowrap;
+}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-primary:disabled{background:var(--text3);cursor:not-allowed;opacity:.5}
+.btn-success{background:var(--accent2);color:#fff}.btn-success:hover{background:#047857}
+.btn-success:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--surface3);color:var(--text)}
+.btn-danger{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.btn-danger:hover{background:#fecaca}
+
+/* ACTIONS BAR */
+.actions{
+  display:flex;align-items:center;gap:10px;
+  margin-top:18px;padding-top:18px;
+  border-top:1px solid var(--border);flex-wrap:wrap;
+}
+
+/* LOG */
+.log-box{
+  background:#0f172a;border-radius:9px;padding:14px 16px;
+  font-family:'DM Mono',monospace;font-size:11.5px;
+  min-height:90px;max-height:200px;overflow-y:auto;margin-top:14px;
+  border:1px solid rgba(255,255,255,0.05);
+}
+.log-line{padding:2px 0;display:flex;gap:10px;line-height:1.4}
+.log-time{color:#334155;flex-shrink:0;min-width:56px}
+.log-ok{color:#34d399}.log-warn{color:#fbbf24}.log-err{color:#f87171}
+.log-info{color:#60a5fa}.log-dim{color:#475569}
+
+/* STATS */
+.stat-card{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:9px;padding:14px;text-align:center;
+}
+.stat-val{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);line-height:1}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:5px}
+.stat-card.c-info .stat-val{color:var(--accent)}
+.stat-card.c-ok .stat-val{color:var(--accent2)}
+.stat-card.c-warn .stat-val{color:var(--warn)}
+.stat-card.c-purple .stat-val{color:var(--purple)}
+
+/* BADGES */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:2px 8px;border-radius:4px;
+  font-size:11px;font-weight:500;font-family:'DM Mono',monospace;
+  white-space:nowrap;
+}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-amber{background:#fef3c7;color:#b45309}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-purple{background:#ede9fe;color:#6d28d9}
+.badge-gray{background:var(--surface3);color:var(--text2)}
+
+/* VEHICLE CARDS */
+.vehicle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.vehicle-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;padding:12px 16px;min-width:140px;
+  box-shadow:var(--shadow);
+}
+.vehicle-name{font-size:13px;font-weight:600;color:var(--text)}
+.vehicle-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:10px}
+.vehicle-pkgs{font-size:13px;color:var(--accent);font-family:'DM Mono',monospace;font-weight:500;margin-top:5px}
+
+/* CONFLICT */
+.conflict-item{
+  background:#fffbeb;border:1px solid #fde68a;
+  border-radius:9px;padding:14px 16px;margin-bottom:10px;
+}
+.conflict-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.conflict-title{font-size:13px;font-weight:500;color:#92400e}
+.conflict-code{font-size:12px;color:#78350f;font-family:'DM Mono',monospace;margin-bottom:10px}
+.conflict-btns{display:flex;gap:8px;flex-wrap:wrap}
+.conflict-btn{
+  height:28px;padding:0 12px;border-radius:6px;
+  font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;
+  cursor:pointer;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);transition:all .1s;
+}
+.conflict-btn:hover{background:var(--surface3)}
+.conflict-btn.chosen{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+/* TABLE */
+.table-wrap{
+  max-height:340px;overflow-y:auto;
+  border:1px solid var(--border);border-radius:9px;
+  margin-top:14px;
+}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px}
+.preview-table th{
+  background:var(--brand);color:#e2e8f0;
+  padding:8px 12px;text-align:left;
+  font-weight:500;font-size:11px;white-space:nowrap;
+  position:sticky;top:0;z-index:1;
+}
+.preview-table td{
+  padding:7px 12px;border-bottom:1px solid var(--border);
+  color:var(--text);vertical-align:middle;
+}
+.preview-table tbody tr:hover td{background:var(--surface2)}
+.preview-table tr.row-xd td{background:#fef9f0!important;color:#92400e;font-style:italic;font-size:11px}
+.preview-table tr.row-seller td{background:#faf5ff!important}
+.preview-table tr.row-missing td{background:#fff7ed!important}
+
+/* LEGEND */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* SHEET PREVIEW TAG */
+.sheet-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#e8f0fe;border:1px solid #c5d5f5;
+  border-radius:6px;padding:4px 12px;
+  font-size:12px;font-family:'DM Mono',monospace;color:#1a3a8f;
+  margin-top:10px;
+}
+.sheet-tag svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+/* SELLER PREFIXES */
+.prefix-list{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:12px;padding:10px 14px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+}
+.prefix-label{font-size:11px;color:var(--text3);margin-right:4px}
+
+/* SUCCESS STATE */
+.success-state{
+  text-align:center;padding:28px;
+  color:var(--accent2);
+}
+.success-state svg{width:36px;height:36px;stroke:var(--accent2);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 10px;display:block}
+.success-state .success-title{font-size:14px;font-weight:500}
+.success-state .success-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:36px;color:var(--text3)}
+.empty-state svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 12px;display:block}
+.empty-state p{font-size:13px}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:18px 0}
+
+/* STATUS TEXT */
+.status-text{font-size:12px;color:var(--accent2);font-family:'DM Mono',monospace}
+
+/* COMING SOON */
+.coming-soon{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 40px;text-align:center;
+}
+.coming-soon-icon{
+  width:64px;height:64px;border-radius:16px;
+  background:var(--surface3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.coming-soon-icon svg{width:28px;height:28px;stroke:var(--text3);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.coming-soon h3{font-size:16px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.coming-soon p{font-size:13px;color:var(--text3);max-width:320px;line-height:1.6}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div>
+      <div class="topbar-name">RouteOps</div>
+      <div class="topbar-sub">plataforma de apoio à roteirização</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-version">v0.4</span>
+    <span class="topbar-badge">protótipo</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Operação</div>
+      <div class="nav-item" onclick="goPage('input')" id="nav-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Gerar Input
+      </div>
+      <div class="nav-item active" onclick="goPage('romaneio')" id="nav-romaneio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Processar Romaneio
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Cadastros</div>
+      <div class="nav-item" onclick="goPage('base')" id="nav-base">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Base de Pontos
+      </div>
+      <div class="nav-item" onclick="goPage('sellers')" id="nav-sellers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Sellers
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Config</div>
+      <div class="nav-item" onclick="goPage('config')" id="nav-config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
+        Configurações
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PAGE: GERAR INPUT -->
+    <div class="page" id="page-input">
+      <div class="page-header">
+        <div class="page-title">Gerar Input do Roteirizador</div>
+        <div class="page-desc">Consolide pontos e sellers e gere o arquivo para upload no roteirizador</div>
+      </div>
+      <div class="card">
+        <div class="coming-soon">
+          <div class="coming-soon-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3>Em construção</h3>
+          <p>A geração automática do input do roteirizador será implementada na próxima versão, integrando com o Google Sheets via Apps Script.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: ROMANEIO -->
+    <div class="page active" id="page-romaneio">
+      <div class="page-header">
+        <div class="page-title">Processar Romaneio</div>
+        <div class="page-desc">Carregue o JSON do roteirizador e a base de pontos para gerar o romaneio completo</div>
+      </div>
+
+      <!-- STEP FLOW -->
+      <div class="step-flow">
+        <div class="step-node">
+          <div class="step-circle active" id="sc1">1</div>
+          <div class="step-label active" id="sl1">Configurar</div>
+        </div>
+        <div class="step-connector" id="scon1"></div>
+        <div class="step-node">
+          <div class="step-circle" id="sc2">2</div>
+          <div class="step-label" id="sl2">Carregar arquivos</div>
+        </div>
+        <div class="step-connector" id="scon2"></div>
+        <div class="step-node">
+          <div class="step-circle" id="sc3">3</div>
+          <div class="step-label" id="sl3">Revisar alertas</div>
+        </div>
+        <div class="step-connector" id="scon3"></div>
+        <div class="step-node">
+          <div class="step-circle" id="sc4">4</div>
+          <div class="step-label" id="sl4">Baixar Romaneio</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: CONFIG -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">1. Configuração da operação</div>
+            <div class="card-sub">Dados fixos que serão aplicados a todas as linhas do romaneio</div>
+          </div>
+        </div>
+        <div class="row3">
+          <div>
+            <label class="field-label">Região / XD</label>
+            <select id="sel-xd" onchange="checkConfig()">
+              <option value="">Selecionar...</option>
+              <option value="GRU">GRU — XD Pegaki Guarulhos</option>
+              <option value="SPV">SPV — XD São Paulo</option>
+              <option value="CWB">CWB — XD Curitiba</option>
+              <option value="RIO">RIO — XD Rio de Janeiro</option>
+              <option value="FRC">FRC — XD Franca</option>
+              <option value="MGA">MGA — XD Maringá</option>
+              <option value="DIV">DIV — XD Divinópolis</option>
+              <option value="CAT">CAT — XD Catanduva</option>
+              <option value="JOI">JOI — XD Joinville</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Data de execução</label>
+            <input type="date" id="inp-data" onchange="checkConfig()">
+          </div>
+          <div>
+            <label class="field-label">Código CD</label>
+            <input type="text" id="inp-cd" placeholder="ex: 160" onchange="checkConfig()">
+          </div>
+        </div>
+        <div id="sheet-preview" style="display:none">
+          <div class="sheet-tag">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Nome da aba: <strong id="sheet-name-val">XD GRU-W19</strong>
+          </div>
+        </div>
+        <div class="prefix-list">
+          <span class="prefix-label">Sellers identificados pelo prefixo:</span>
+          <span class="badge badge-purple">1000xxx</span>
+          <span class="badge badge-purple">2000xxx</span>
+          <span class="badge badge-purple">3000xxx</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:6px">— aplicado automaticamente</span>
+        </div>
+      </div>
+
+      <!-- STEP 2: UPLOAD -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">2. Carregar arquivos</div>
+            <div class="card-sub">Base de pontos + sellers e JSON gerado pelo roteirizador</div>
+          </div>
+        </div>
+        <div class="row2">
+          <label class="upload-zone" id="zone-base" onclick="document.getElementById('f-base').click();event.preventDefault()">
+            <input type="file" id="f-base" accept=".xlsx,.csv" onchange="loadBase(this)">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <div>
+              <div class="upload-text" id="t-base">Base de Pontos + Sellers</div>
+              <div class="upload-hint">base_pontos.xlsx — código, CNPJ, endereço, telefone...</div>
+            </div>
+          </label>
+          <label class="upload-zone" id="zone-json" onclick="document.getElementById('f-json').click();event.preventDefault()">
+            <input type="file" id="f-json" accept=".json" onchange="loadJson(this)">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="upload-text" id="t-json">Output do Roteirizador</div>
+              <div class="upload-hint">optimization_XXXX.json</div>
+            </div>
+          </label>
+        </div>
+        <div id="log-box" class="log-box" style="display:none"></div>
+      </div>
+
+      <!-- STEP 3: CONFLICTS -->
+      <div class="card" id="card-conflicts" style="display:none">
+        <div class="card-header">
+          <div>
+            <div class="card-title">3. Revisão de alertas</div>
+            <div class="card-sub" id="conflict-sub">Resolva os alertas antes de prosseguir</div>
+          </div>
+        </div>
+        <div id="conflict-list"></div>
+        <div id="no-conflicts" class="success-state" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div class="success-title">Nenhum alerta</div>
+          <div class="success-sub">Todos os pontos e sellers foram encontrados na base</div>
+        </div>
+      </div>
+
+      <!-- STEP 4: PREVIEW + DOWNLOAD -->
+      <div class="card" id="card-preview" style="display:none">
+        <div class="card-header">
+          <div>
+            <div class="card-title">4. Preview e download</div>
+            <div class="card-sub">Confira o resumo antes de baixar o romaneio</div>
+          </div>
+        </div>
+
+        <div class="row5" id="stats-row" style="margin-bottom:16px"></div>
+
+        <div class="vehicle-grid" id="vehicle-grid"></div>
+
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#fef9f0;border:1px solid #fde68a"></div>Retorno XD</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#faf5ff;border:1px solid #ddd6fe"></div>Coleta em Seller</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#fff;border:1px solid var(--border)"></div>Ponto</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#fff7ed;border:1px solid #fed7aa"></div>Sem cadastro</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th>Veículo</th>
+                <th>Tipo</th>
+                <th>Código</th>
+                <th>Nome informal</th>
+                <th>Chegada</th>
+                <th>Volumes</th>
+                <th>Cadastro</th>
+              </tr>
+            </thead>
+            <tbody id="preview-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-success" onclick="downloadRomaneio()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar Romaneio .xlsx
+          </button>
+          <button class="btn btn-ghost" onclick="resetRomaneio()">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Nova operação
+          </button>
+          <span id="dl-status" class="status-text" style="margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: BASE -->
+    <div class="page" id="page-base">
+      <div class="page-header">
+        <div class="page-title">Base de Pontos</div>
+        <div class="page-desc">Gestão centralizada dos pontos de coleta cadastrados</div>
+      </div>
+      <div class="card">
+        <div class="coming-soon">
+          <div class="coming-soon-icon">
+            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <h3>Integração com Google Sheets</h3>
+          <p>Esta seção será ativada após configurar o Apps Script, permitindo visualizar e gerenciar a base de pontos diretamente na plataforma.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: SELLERS -->
+    <div class="page" id="page-sellers">
+      <div class="page-header">
+        <div class="page-title">Sellers</div>
+        <div class="page-desc">Gestão dos sellers com coleta domiciliar</div>
+      </div>
+      <div class="card">
+        <div class="coming-soon">
+          <div class="coming-soon-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <h3>Em construção</h3>
+          <p>O cadastro e gestão de sellers será disponibilizado em breve, com integração ao Google Sheets e identificação automática por prefixo de código.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: CONFIG -->
+    <div class="page" id="page-config">
+      <div class="page-header">
+        <div class="page-title">Configurações</div>
+        <div class="page-desc">Personalize os parâmetros da plataforma</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Prefixos de sellers</div>
+            <div class="card-sub">Códigos que identificam automaticamente um seller no JSON do roteirizador</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+          <span class="badge badge-purple" id="pfx-1000">1000xxx</span>
+          <span class="badge badge-purple" id="pfx-2000">2000xxx</span>
+          <span class="badge badge-purple" id="pfx-3000">3000xxx</span>
+        </div>
+        <div style="font-size:12px;color:var(--text3)">Para adicionar novos prefixos, entre em contato com o time técnico.</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">XDs cadastrados</div>
+            <div class="card-sub">Crossdockings disponíveis para seleção no processamento do romaneio</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="xd-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────
+var SELLER_PREFIXES = ['1000','2000','3000'];
+
+var XD_CATALOG = {
+  'GRU':{name:'XD PEGAKI - GRU',cnpj:1441050,estado:'SP',municipio:'GUARULHOS',bairro:'CIDADE INDUSTRIAL SATÉLITE',numero:365,endereco:'AVENIDA JUSTINO DE MAIO',cep:'07222-000',lat:-23.47480459,lng:-46.46512483,etiqueta:'XDCWB,PEGAKI,ENTREGA',apelido:'GL'},
+  'SPV':{name:'XD PEGAKI - SPV',cnpj:2000001,estado:'SP',municipio:'SÃO PAULO',bairro:'CENTRO',numero:100,endereco:'AV PAULISTA',cep:'01310-100',lat:-23.5613,lng:-46.6562,etiqueta:'PEGAKI,ENTREGA',apelido:'SP'},
+  'CWB':{name:'XD PEGAKI - CWB',cnpj:2000002,estado:'PR',municipio:'CURITIBA',bairro:'CIC',numero:200,endereco:'RUA DAS INDUSTRIAS',cep:'81460-000',lat:-25.4809,lng:-49.2951,etiqueta:'PEGAKI,ENTREGA',apelido:'CWB'},
+  'RIO':{name:'XD PEGAKI - RIO',cnpj:2000003,estado:'RJ',municipio:'RIO DE JANEIRO',bairro:'CENTRO',numero:50,endereco:'AV BRASIL',cep:'20040-020',lat:-22.9068,lng:-43.1729,etiqueta:'PEGAKI,ENTREGA',apelido:'RIO'},
+  'FRC':{name:'XD PEGAKI - FRC',cnpj:2000004,estado:'SP',municipio:'FRANCA',bairro:'CENTRO',numero:300,endereco:'AV MAJOR NICACIO',cep:'14400-690',lat:-20.5386,lng:-47.4008,etiqueta:'PEGAKI,ENTREGA',apelido:'FRC'},
+  'MGA':{name:'XD PEGAKI - MGA',cnpj:2000005,estado:'PR',municipio:'MARINGÁ',bairro:'ZONA 7',numero:150,endereco:'AV HORÁCIO RACANELLO',cep:'87020-015',lat:-23.4273,lng:-51.9375,etiqueta:'PEGAKI,ENTREGA',apelido:'MGA'},
+  'DIV':{name:'XD PEGAKI - DIV',cnpj:2000006,estado:'MG',municipio:'DIVINÓPOLIS',bairro:'CENTRO',numero:100,endereco:'AV PARANÁ',cep:'35500-005',lat:-20.1386,lng:-44.8839,etiqueta:'PEGAKI,ENTREGA',apelido:'DIV'},
+  'CAT':{name:'XD PEGAKI - CAT',cnpj:2000007,estado:'SP',municipio:'CATANDUVA',bairro:'CENTRO',numero:200,endereco:'AV DANIEL DALTO',cep:'15800-010',lat:-21.1386,lng:-48.9739,etiqueta:'PEGAKI,ENTREGA',apelido:'CAT'},
+  'JOI':{name:'XD PEGAKI - JOI',cnpj:2000008,estado:'SC',municipio:'JOINVILLE',bairro:'CENTRO',numero:150,endereco:'RUA NOVE DE MARÇO',cep:'89201-305',lat:-26.3040,lng:-48.8460,etiqueta:'PEGAKI,ENTREGA',apelido:'JOI'}
+};
+
+// ─── STATE ────────────────────────────────────────────────────
+var S = {
+  config: false,
+  baseLoaded: false,
+  jsonLoaded: false,
+  baseData: {},
+  jsonData: null,
+  conflicts: [],
+  rows: []
+};
+
+// ─── NAVIGATION ───────────────────────────────────────────────
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function isSeller(code) {
+  return SELLER_PREFIXES.some(function(p){ return String(code).startsWith(p); });
+}
+
+function parseName(label) {
+  if (!label) return {code:'', name:''};
+  var clean = label.replace(/\[SID:\d+\]\s*/,'').trim();
+  var m = clean.match(/^(\d+)-(.+)$/);
+  if (m) return {code: m[1].trim(), name: m[2].trim()};
+  return {code:'', name: clean};
+}
+
+function buildNomeInformal(name, seller) {
+  return seller ? 'Coleta em Seller - ' + name : name;
+}
+
+function getWeekNum(dateStr) {
+  var d = new Date(dateStr+'T12:00:00');
+  var jan1 = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+}
+
+function getSheetName(xdKey, dateStr) {
+  if (!xdKey || !dateStr) return '';
+  return 'XD ' + xdKey + '-W' + getWeekNum(dateStr);
+}
+
+function fmtTime(iso) {
+  try {
+    var d = new Date(iso);
+    return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  } catch(e) { return ''; }
+}
+
+function setStep(n) {
+  for (var i = 1; i <= 4; i++) {
+    var done = i < n, active = i === n;
+    var c = document.getElementById('sc'+i);
+    var l = document.getElementById('sl'+i);
+    c.className = 'step-circle' + (done?' done':active?' active':'');
+    l.className = 'step-label' + (done?' done':active?' active':'');
+    c.textContent = done ? '✓' : i;
+    if (i < 4) {
+      document.getElementById('scon'+i).className = 'step-connector' + (i < n ? ' done' : '');
+    }
+  }
+}
+
+function log(type, msg) {
+  var box = document.getElementById('log-box');
+  box.style.display = 'block';
+  var now = new Date();
+  var t = now.getHours().toString().padStart(2,'0') + ':' +
+           now.getMinutes().toString().padStart(2,'0') + ':' +
+           now.getSeconds().toString().padStart(2,'0');
+  var cls = {ok:'log-ok',warn:'log-warn',err:'log-err',info:'log-info',dim:'log-dim'}[type]||'log-dim';
+  var d = document.createElement('div');
+  d.className = 'log-line';
+  d.innerHTML = '<span class="log-time">'+t+'</span><span class="'+cls+'">'+msg+'</span>';
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────
+function checkConfig() {
+  var xd = document.getElementById('sel-xd').value;
+  var dt = document.getElementById('inp-data').value;
+  var cd = document.getElementById('inp-cd').value;
+  S.config = !!(xd && dt && cd);
+  var prev = document.getElementById('sheet-preview');
+  if (xd && dt) {
+    prev.style.display = 'block';
+    document.getElementById('sheet-name-val').textContent = getSheetName(xd, dt);
+  } else {
+    prev.style.display = 'none';
+  }
+  if (S.config && S.baseLoaded && S.jsonLoaded) processData();
+  else if (S.config) setStep(2);
+}
+
+// ─── LOAD BASE ────────────────────────────────────────────────
+function loadBase(input) {
+  if (!input.files.length) return;
+  var f = input.files[0];
+  document.getElementById('t-base').textContent = f.name;
+  document.getElementById('zone-base').classList.add('has-file');
+  log('dim', 'Lendo base: ' + f.name + '...');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      S.baseData = {};
+      var pontos = 0, sellers = 0;
+      rows.forEach(function(r) {
+        var code = String(
+          r['Código'] || r['codigo'] || r['code'] ||
+          r['ID'] || r['id'] || r['Cod'] ||
+          Object.values(r)[0] || ''
+        ).trim();
+        if (code) {
+          S.baseData[code] = r;
+          if (isSeller(code)) sellers++; else pontos++;
+        }
+      });
+      log('ok', pontos + ' pontos + ' + sellers + ' sellers carregados da base');
+      S.baseLoaded = true;
+      if (S.config && S.jsonLoaded) processData();
+    } catch(err) { log('err', 'Erro ao ler base: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+// ─── LOAD JSON ────────────────────────────────────────────────
+function loadJson(input) {
+  if (!input.files.length) return;
+  var f = input.files[0];
+  document.getElementById('t-json').textContent = f.name;
+  document.getElementById('zone-json').classList.add('has-file');
+  log('dim', 'Lendo JSON: ' + f.name + '...');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      S.jsonData = JSON.parse(e.target.result);
+      var routes = S.jsonData.routes || [];
+      var sellers = 0, pontos = 0;
+      routes.forEach(function(r) {
+        r.stops.forEach(function(s) {
+          if (s.stop_type === 'pickup') {
+            var p = parseName(s.shipment_label || '');
+            if (isSeller(p.code)) sellers++; else pontos++;
+          }
+        });
+      });
+      log('ok', routes.length + ' rotas detectadas — ' + pontos + ' pontos + ' + sellers + ' sellers');
+      S.jsonLoaded = true;
+      if (S.config && S.baseLoaded) processData();
+      else if (S.config) setStep(3);
+    } catch(err) { log('err', 'Erro ao ler JSON: ' + err.message); }
+  };
+  reader.readAsText(f);
+}
+
+// ─── PROCESS ─────────────────────────────────────────────────
+function processData() {
+  log('info', 'Iniciando processamento...');
+  setStep(3);
+  var xdKey = document.getElementById('sel-xd').value;
+  var xd = XD_CATALOG[xdKey];
+  var execDate = document.getElementById('inp-data').value;
+  var cdCode = document.getElementById('inp-cd').value;
+  var routes = S.jsonData.routes || [];
+  var rows = [], conflicts = [], missingCodes = [];
+
+  routes.forEach(function(route, ri) {
+    var veh = route.vehicle_name;
+    var slug = route.formatted_route_name || ('Rota_R' + (ri+1));
+    var pickups = route.stops.filter(function(s){ return s.stop_type === 'pickup'; });
+    var totalStops = pickups.length + 1; // only XD at end
+    var rNum = ri + 1;
+    var tag = '_' + xdKey + '_' + rNum;
+
+    function mkCod(seq) {
+      return seq.toString().padStart(2,'0') + '_de_' + totalStops.toString().padStart(2,'0');
+    }
+
+    // Pickup stops
+    pickups.forEach(function(stop, si) {
+      var parsed = parseName(stop.shipment_label || '');
+      var code = parsed.code;
+      var seller = isSeller(code);
+      var nomeInformal = buildNomeInformal(parsed.name, seller);
+      var baseEntry = S.baseLoaded ? S.baseData[code] : null;
+      var found = !!baseEntry;
+      var seq = si + 1;
+
+      if (!found && code && missingCodes.indexOf(code) < 0) {
+        missingCodes.push(code);
+        conflicts.push({code:code, name:parsed.name, seller:seller, resolved:false, action:null});
+      }
+
+      rows.push({
+        tipo: seller ? 'seller' : 'ponto',
+        veh: veh, seq: seq, code: code,
+        nomeInformal: nomeInformal, name: parsed.name, seller: seller,
+        arrival: fmtTime(stop.arrival_time),
+        departure: fmtTime(stop.departure_time),
+        pkgs: stop.load_packages || 0,
+        lat: stop.latitude, lng: stop.longitude,
+        codRota: mkCod(seq), rNum: rNum, slug: slug,
+        romaneio: slug + ' - ' + mkCod(seq),
+        cd: cdCode, execDate: execDate, tag: tag, apelido: xd.apelido,
+        cnpj: baseEntry ? (baseEntry['CNPJ/CPF']||baseEntry['cnpj']||'') : '',
+        razao: baseEntry ? (baseEntry['Razão Social']||baseEntry['razao']||'') : '',
+        telefone: baseEntry ? (baseEntry['Telefone']||baseEntry['telefone']||'') : '',
+        estado: baseEntry ? (baseEntry['Estado']||baseEntry['estado']||xd.estado) : xd.estado,
+        municipio: baseEntry ? (baseEntry['Município']||baseEntry['municipio']||'') : '',
+        bairro: baseEntry ? (baseEntry['Bairro']||baseEntry['bairro']||'') : '',
+        numero: baseEntry ? (baseEntry['Número']||baseEntry['numero']||'') : '',
+        endereco: baseEntry ? (baseEntry['Endereço']||baseEntry['endereco']||'') : '',
+        cep: baseEntry ? (baseEntry['CEP']||baseEntry['cep']||'') : '',
+        etiqueta: seller ? 'SELLER' : 'COLETA',
+        found: found
+      });
+    });
+
+    // XD retorno — somente ao final
+    var seqEnd = totalStops;
+    rows.push({
+      tipo: 'xd', veh: veh, seq: seqEnd, code: 'XD',
+      nomeInformal: xd.name, name: xd.name, seller: false,
+      arrival: fmtTime(route.end_time), departure: '',
+      pkgs: null, lat: xd.lat, lng: xd.lng,
+      codRota: mkCod(seqEnd), rNum: rNum, slug: slug,
+      romaneio: slug + ' - ' + mkCod(seqEnd),
+      cd: cdCode, execDate: execDate, tag: tag,
+      cnpj: xd.cnpj, razao: String(xd.cnpj),
+      estado: xd.estado, municipio: xd.municipio, bairro: xd.bairro,
+      numero: xd.numero, endereco: xd.endereco, cep: xd.cep,
+      etiqueta: xd.etiqueta, apelido: xd.apelido, found: true
+    });
+  });
+
+  S.rows = rows;
+  S.conflicts = conflicts;
+
+  var cntS = rows.filter(function(r){ return r.tipo==='seller'; }).length;
+  var cntP = rows.filter(function(r){ return r.tipo==='ponto'; }).length;
+  log('ok', cntP + ' pontos + ' + cntS + ' sellers + ' + routes.length + ' retornos XD');
+  if (conflicts.length > 0)
+    log('warn', conflicts.length + ' código(s) não encontrado(s) na base — revisão necessária');
+  else
+    log('ok', 'Todos os códigos encontrados na base');
+
+  renderConflicts();
+  renderPreview();
+}
+
+// ─── CONFLICTS ────────────────────────────────────────────────
+function renderConflicts() {
+  var card = document.getElementById('card-conflicts');
+  card.style.display = 'block';
+  var list = document.getElementById('conflict-list');
+  var noConf = document.getElementById('no-conflicts');
+  var sub = document.getElementById('conflict-sub');
+  list.innerHTML = '';
+
+  if (S.conflicts.length === 0) {
+    noConf.style.display = 'block';
+    sub.textContent = 'Nenhum alerta encontrado';
+    setStep(4);
+    return;
+  }
+
+  sub.textContent = S.conflicts.length + ' código(s) não encontrado(s) na base';
+  noConf.style.display = 'none';
+
+  S.conflicts.forEach(function(c, i) {
+    var typeBadge = c.seller
+      ? '<span class="badge badge-purple">Seller</span>'
+      : '<span class="badge badge-blue">Ponto</span>';
+    var div = document.createElement('div');
+    div.className = 'conflict-item';
+    div.innerHTML =
+      '<div class="conflict-header"><span style="font-size:16px">⚠</span>' +
+      '<span class="conflict-title">Não encontrado na base</span>' + typeBadge + '</div>' +
+      '<div class="conflict-code">Código: ' + c.code + ' — ' + c.name + '</div>' +
+      '<div class="conflict-btns">' +
+        '<button class="conflict-btn" id="cb-keep-'+i+'" onclick="resolve('+i+',\'keep\')">Manter sem cadastro</button>' +
+        '<button class="conflict-btn" id="cb-skip-'+i+'" onclick="resolve('+i+',\'skip\')">Remover da rota</button>' +
+        '<button class="conflict-btn" id="cb-flag-'+i+'" onclick="resolve('+i+',\'flag\')">Marcar pra cadastrar</button>' +
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+function resolve(i, action) {
+  S.conflicts[i].resolved = true;
+  S.conflicts[i].action = action;
+  ['keep','skip','flag'].forEach(function(a) {
+    var b = document.getElementById('cb-'+a+'-'+i);
+    if (b) b.classList.toggle('chosen', a === action);
+  });
+  if (S.conflicts.every(function(c){ return c.resolved; })) {
+    log('ok', 'Todos os alertas resolvidos — pronto para download');
+    setStep(4);
+  }
+}
+
+// ─── PREVIEW ─────────────────────────────────────────────────
+function renderPreview() {
+  document.getElementById('card-preview').style.display = 'block';
+  var routes = S.jsonData.routes || [];
+  var cntP=0, cntS=0, totalPkgs=0, missing=0;
+  S.rows.forEach(function(r) {
+    if (r.tipo==='ponto')  { cntP++;  totalPkgs += r.pkgs||0; }
+    if (r.tipo==='seller') { cntS++;  totalPkgs += r.pkgs||0; }
+    if ((r.tipo==='ponto'||r.tipo==='seller') && !r.found) missing++;
+  });
+
+  document.getElementById('stats-row').innerHTML =
+    '<div class="stat-card c-info"><div class="stat-val">'+routes.length+'</div><div class="stat-lbl">veículos</div></div>' +
+    '<div class="stat-card c-ok"><div class="stat-val">'+cntP+'</div><div class="stat-lbl">pontos</div></div>' +
+    '<div class="stat-card c-purple"><div class="stat-val">'+cntS+'</div><div class="stat-lbl">sellers</div></div>' +
+    '<div class="stat-card c-ok"><div class="stat-val">'+totalPkgs+'</div><div class="stat-lbl">volumes</div></div>' +
+    '<div class="stat-card '+(missing>0?'c-warn':'c-ok')+'"><div class="stat-val">'+missing+'</div><div class="stat-lbl">sem cadastro</div></div>';
+
+  var vg = document.getElementById('vehicle-grid');
+  vg.innerHTML = '';
+  routes.forEach(function(r) {
+    var picks = r.stops.filter(function(s){ return s.stop_type==='pickup'; });
+    var pkgs = picks.reduce(function(a,s){ return a+(s.load_packages||0); }, 0);
+    var nS = picks.filter(function(s){
+      var p = parseName(s.shipment_label||''); return isSeller(p.code);
+    }).length;
+    var nP = picks.length - nS;
+    var div = document.createElement('div');
+    div.className = 'vehicle-card';
+    div.innerHTML =
+      '<div class="vehicle-name">'+r.vehicle_name+'</div>' +
+      '<div class="vehicle-meta"><span>'+nP+' pontos</span><span style="color:var(--purple)">'+nS+' sellers</span></div>' +
+      '<div class="vehicle-pkgs">'+pkgs+' volumes</div>';
+    vg.appendChild(div);
+  });
+
+  var tbody = document.getElementById('preview-tbody');
+  tbody.innerHTML = '';
+  var num = 1;
+  S.rows.forEach(function(r) {
+    var tr = document.createElement('tr');
+    if (r.tipo==='xd') tr.className = 'row-xd';
+    else if (r.tipo==='seller') tr.className = 'row-seller';
+    else if (!r.found) tr.className = 'row-missing';
+
+    var typeBadge = r.tipo==='xd'
+      ? '<span class="badge badge-gray">XD</span>'
+      : r.tipo==='seller'
+        ? '<span class="badge badge-purple">Seller</span>'
+        : '<span class="badge badge-blue">Ponto</span>';
+
+    var statusBadge = r.tipo==='xd'
+      ? '—'
+      : r.found
+        ? '<span class="badge badge-green">ok</span>'
+        : '<span class="badge badge-amber">sem cadastro</span>';
+
+    tr.innerHTML =
+      '<td>'+num+'</td>' +
+      '<td>'+r.veh+'</td>' +
+      '<td>'+typeBadge+'</td>' +
+      '<td style="font-family:\'DM Mono\',monospace;font-size:11px">'+r.code+'</td>' +
+      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.nomeInformal+'">'+r.nomeInformal+'</td>' +
+      '<td>'+(r.arrival||'—')+'</td>' +
+      '<td>'+(r.pkgs!=null?r.pkgs:'—')+'</td>' +
+      '<td>'+statusBadge+'</td>';
+    tbody.appendChild(tr);
+    num++;
+  });
+}
+
+// ─── DOWNLOAD ────────────────────────────────────────────────
+function downloadRomaneio() {
+  if (!S.rows.length) return;
+  var xdKey = document.getElementById('sel-xd').value;
+  var execDate = document.getElementById('inp-data').value;
+  var sheetName = getSheetName(xdKey, execDate);
+
+  var headers = [
+    'Código CD','Romaneio','Placa do veículo','Data da execução','Código (NF/PD)',
+    'Tipo','CNPJ/CPF','Razão Social','Nome informal','Contato','Telefone',
+    'Estado','Município','Bairro','Número','Endereço','Complemento','CEP',
+    'Latitude','Longitude','Tempo de atendimento estimado',
+    'Janela Inicio A','Janela Fim A','Janela Inicio B','Janela Fim B',
+    'Data Limite (dd/mm/aaaa)','Carga (KG)','Carga (CM³)','Valor (R$)',
+    'Quantidade de volumes','Etiquetas','Habilidades','Vencendo hoje',
+    'Carro','Operador','NumRota','NumPonto','CodRota','Ordem atual',
+    'Recoleta','Região','Apelido Região','Validação Gris','Feedback Track trace','Tag da Rota'
+  ];
+
+  var wsData = [headers];
+  S.rows.forEach(function(r) {
+    wsData.push([
+      r.cd, r.romaneio, r.veh, execDate, r.romaneio,
+      'C', r.cnpj||'', r.razao||'', r.nomeInformal,
+      'Olá, Carro Pegaki ' + r.veh, r.telefone||'',
+      r.estado||'', r.municipio||'', r.bairro||'',
+      r.numero||'', r.endereco||'', '', r.cep||'',
+      r.lat||'', r.lng||'', 20,
+      r.arrival||'', r.departure||'', '', '',
+      execDate, '', '', '',
+      r.pkgs!=null ? r.pkgs : '',
+      r.etiqueta||'', '', '',
+      r.veh, '', r.rNum, r.seq, r.codRota, r.seq,
+      '', xdKey, r.apelido||'', '', '', r.tag||''
+    ]);
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = headers.map(function(){ return {wch:18}; });
+  XLSX.utils.book_append_sheet(wb, sheetName, ws);
+
+  var dt = execDate.replace(/-/g,'');
+  var fname = 'Romaneio_' + xdKey + '_' + dt + '.xlsx';
+  XLSX.writeFile(wb, fname);
+  document.getElementById('dl-status').textContent = '✓ ' + fname + ' baixado · aba: ' + sheetName;
+  log('ok', 'Download concluído: ' + fname + ' (aba: ' + sheetName + ')');
+}
+
+// ─── RESET ────────────────────────────────────────────────────
+function resetRomaneio() {
+  S = {config:false,baseLoaded:false,jsonLoaded:false,baseData:{},jsonData:null,conflicts:[],rows:[]};
+  document.getElementById('f-base').value = '';
+  document.getElementById('f-json').value = '';
+  document.getElementById('t-base').textContent = 'Base de Pontos + Sellers';
+  document.getElementById('t-json').textContent = 'Output do Roteirizador';
+  document.getElementById('zone-base').classList.remove('has-file');
+  document.getElementById('zone-json').classList.remove('has-file');
+  document.getElementById('log-box').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('card-conflicts').style.display = 'none';
+  document.getElementById('card-preview').style.display = 'none';
+  document.getElementById('dl-status').textContent = '';
+  setStep(1);
+}
+
+// ─── CONFIG PAGE ─────────────────────────────────────────────
+function renderConfigPage() {
+  var xdList = document.getElementById('xd-list');
+  if (!xdList) return;
+  Object.keys(XD_CATALOG).forEach(function(k) {
+    var xd = XD_CATALOG[k];
+    var div = document.createElement('div');
+    div.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px';
+    div.innerHTML =
+      '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">' +
+      '<span class="badge badge-gray" style="margin-right:6px">'+k+'</span></div>' +
+      '<div style="font-size:12px;color:var(--text2)">' + xd.name + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + xd.municipio + ' — ' + xd.estado + '</div>';
+    xdList.appendChild(div);
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+document.getElementById('inp-data').valueAsDate = new Date();
+document.getElementById('inp-cd').value = '160';
+checkConfig();
+renderConfigPage();
+</script>
+</body>
+</html>
